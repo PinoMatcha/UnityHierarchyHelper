@@ -8,7 +8,7 @@ using UnityEditor.IMGUI.Controls;
 namespace PMP.HierarchyHelper {
     public class HierarchyHelper : Editor {
 
-        // Œ»Ý‚ÌƒCƒxƒ“ƒg
+        // ç¾åœ¨ã®ã‚¤ãƒ™ãƒ³ãƒˆ
         internal static Event currentEvent;
 
         [MenuItem("GameObject/PM Presents/Hierarchy Helper/Create Hierarchy Separator", false, 20)]
@@ -29,7 +29,7 @@ namespace PMP.HierarchyHelper {
 
             Selection.activeGameObject = go;
 
-            Debug.Log("[PM Presents] Hierarchy Separator ‚ðì¬‚µ‚Ü‚µ‚½B");
+            Debug.Log("[PM Presents] Hierarchy Separator ã‚’ä½œæˆã—ã¾ã—ãŸã€‚");
         }
 
         internal const int GLOBAL_SPACE_OFFSET_LEFT = 16 * 2;
@@ -58,7 +58,7 @@ namespace PMP.HierarchyHelper {
             }
         }
 
-        // 1x1‚ÌƒzƒƒCƒgƒsƒNƒZƒ‹
+        // 1x1ã®ãƒ›ãƒ¯ã‚¤ãƒˆãƒ”ã‚¯ã‚»ãƒ«
         private static Texture2D _pixelWhite;
         private static Texture2D pixelWhite {
             get {
@@ -79,7 +79,7 @@ namespace PMP.HierarchyHelper {
         }
 
         private static void EditorUpdate() {
-            // ƒCƒxƒ“ƒgXV
+            // ã‚¤ãƒ™ãƒ³ãƒˆæ›´æ–°
             currentEvent = Event.current;
 
             var activeObject = Selection.activeGameObject;
@@ -93,7 +93,7 @@ namespace PMP.HierarchyHelper {
 
             var gameObject = EditorUtility.InstanceIDToObject(instanceID) as GameObject;
 
-            // Scene‚Íreturn
+            // Sceneã¯return
             if (gameObject == null) return;
 
             #region Draw Separator
@@ -113,7 +113,7 @@ namespace PMP.HierarchyHelper {
 
             #region Draw Stripe
 
-            // ŽdØ‚è—p‚ÌƒIƒuƒWƒFƒNƒg‚Å‚È‚¯‚ê‚Îs‚ðF•ª‚¯
+            // ä»•åˆ‡ã‚Šç”¨ã®ã‚ªãƒ–ã‚¸ã‚§ã‚¯ãƒˆã§ãªã‘ã‚Œã°è¡Œã‚’è‰²åˆ†ã‘
             var index = (int)(selectionRect.y + STRIPE_OFFSET_Y) / ROW_HEIGHT;
             if (!sParam) DrawStripedLines(index, selectionRect);
 
@@ -122,7 +122,7 @@ namespace PMP.HierarchyHelper {
             #region Draw Tree
 
             bool hasParent = gameObject.transform.parent != null;
-            bool hasChilds = gameObject.transform.childCount > 0;
+            bool hasChildren = gameObject.transform.childCount > 0;
 
             if (hasParent) {
                 int nestLevel = -1;
@@ -134,7 +134,7 @@ namespace PMP.HierarchyHelper {
                     checkTrns = checkTrns.parent;
                 }
 
-                DrawHorizontalLine(selectionRect, nestLevel, hasChilds);
+                DrawHorizontalLine(selectionRect, nestLevel, hasChildren);
                 if (gameObject.transform.GetSiblingIndex() < gameObject.transform.parent.childCount - 1) {
                     DrawFullVerticalLine(selectionRect, nestLevel);
                 } else {
@@ -164,9 +164,9 @@ namespace PMP.HierarchyHelper {
 
         private static void DrawSeparator(string name, Rect selectionRect, SeparatorParameter param) {
 
-            // •¶ŽšF  
+            // æ–‡å­—è‰²  
             Color textColor = param.GetTextColor();
-            // ”wŒiF
+            // èƒŒæ™¯è‰²
             Color bgColor = param.GetBackgroundColor();
 
             if (EditorApplication.isPlayingOrWillChangePlaymode) {

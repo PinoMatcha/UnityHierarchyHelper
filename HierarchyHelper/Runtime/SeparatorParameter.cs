@@ -4,36 +4,36 @@ namespace PMP.HierarchyHelper {
     [RequireComponent(typeof(Transform))]
     public class SeparatorParameter : MonoBehaviour {
 
-        // ”wŒiF
+        // èƒŒæ™¯è‰²
         [SerializeField] Color bgColor = new Color(0.50f, 0.80f, 1.00f);
-        // •¶ŽšF
+        // æ–‡å­—è‰²
         [SerializeField] Color textColor = new Color(0.043f, 0.043f, 0.043f);
 
         /// <summary>
-        /// ”wŒiF‚ðã‘‚«‚µ‚Ü‚·B
+        /// èƒŒæ™¯è‰²ã‚’ä¸Šæ›¸ãã—ã¾ã™ã€‚
         /// </summary>
         public void SetBackgroundColor(Color newColor) => bgColor = newColor;
 
         /// <summary>
-        /// •¶ŽšF‚ðã‘‚«‚µ‚Ü‚·B
+        /// æ–‡å­—è‰²ã‚’ä¸Šæ›¸ãã—ã¾ã™ã€‚
         /// </summary>
         public void SetTextColor(Color newColor) => textColor = newColor;
 
         /// <summary>
-        /// ”wŒiF‚ð•Ô‚µ‚Ü‚·B
+        /// èƒŒæ™¯è‰²ã‚’è¿”ã—ã¾ã™ã€‚
         /// </summary>
         public Color GetBackgroundColor() => bgColor;
 
         /// <summary>
-        /// •¶ŽšF‚ð•Ô‚µ‚Ü‚·B
+        /// æ–‡å­—è‰²ã‚’è¿”ã—ã¾ã™ã€‚
         /// </summary>
         public Color GetTextColor() => textColor;
 
         /// <summary>
-        /// ˆø”‚Ì2F‚ðæŽZ‚µ‚½F‚ð•Ô‚µ‚Ü‚·B
+        /// å¼•æ•°ã®2è‰²ã‚’ä¹—ç®—ã—ãŸè‰²ã‚’è¿”ã—ã¾ã™ã€‚
         /// </summary>
-        /// <param name="baseColor">ƒx[ƒX‚ÌF</param>
-        /// <param name="multiplyColor">æŽZ‚·‚éF</param>
+        /// <param name="baseColor">ãƒ™ãƒ¼ã‚¹ã®è‰²</param>
+        /// <param name="multiplyColor">ä¹—ç®—ã™ã‚‹è‰²</param>
         public Color BlendMultiply(Color baseColor, Color multiplyColor) {
             return baseColor * multiplyColor;
         }
