@@ -16,11 +16,13 @@ namespace PMP.HierarchyHelper {
         static void CreateHierarchySeparator() {
             var go = new GameObject("Separator");
             go.transform.position = new Vector3();
-            go.SetActive(false);
+            go.transform.rotation = Quaternion.Euler(0.0f, 0.0f, 0.0f);
+            go.transform.localScale = Vector3.one;
+            go.transform.hideFlags = HideFlags.HideInInspector;
             var sParam = go.AddComponent<SeparatorParameter>();
 
             if (!EditorGUIUtility.isProSkin) {
-                sParam.SetBackgroundColor(new Color(0.60f, 0.80f, 0.95f));
+                sParam.SetBackgroundColor(new Color(0.50f, 0.86f, 1.00f));
                 sParam.SetTextColor(new Color(0.043f, 0.043f, 0.043f));
             } else {
                 sParam.SetBackgroundColor(new Color(0.30f, 0.60f, 0.75f));
@@ -59,13 +61,14 @@ namespace PMP.HierarchyHelper {
         }
 
         // 1x1のホワイトピクセル
-        private static Texture2D _pixelWhite;
+        private static Texture2D _pixelWhite = null;
         private static Texture2D pixelWhite {
             get {
                 if (_pixelWhite == null) {
-                    _pixelWhite = new Texture2D(1, 1, TextureFormat.RGBA32, false);
+                    /* _pixelWhite = new Texture2D(1, 1, TextureFormat.RGBA32, false);
                     _pixelWhite.SetPixel(0, 0, Color.white);
-                    _pixelWhite.Apply();
+                    _pixelWhite.Apply(); */
+                    _pixelWhite = Texture2D.whiteTexture;
                 }
 
                 return _pixelWhite;
@@ -100,8 +103,8 @@ namespace PMP.HierarchyHelper {
 
             SeparatorParameter sParam = gameObject.GetComponent<SeparatorParameter>();
             if (sParam) {
-                DrawSeparator(gameObject.name, selectionRect, sParam);
-                gameObject.hideFlags = HideFlags.None;
+                DrawSeparator(gameObject.name, selectionRect, sParam, gameObject.transform.parent, gameObject.transform.childCount > 0);
+                gameObject.transform.hideFlags = HideFlags.NotEditable | HideFlags.HideInInspector;
                 SceneVisibilityManager svmIns = SceneVisibilityManager.instance;
                 if (svmIns.IsHidden(gameObject) || svmIns.IsPickingDisabled(gameObject)) {
                     svmIns.Show(gameObject, true);
@@ -162,7 +165,7 @@ namespace PMP.HierarchyHelper {
             EditorApplication.RepaintHierarchyWindow();
         }
 
-        private static void DrawSeparator(string name, Rect selectionRect, SeparatorParameter param) {
+        private static void DrawSeparator(string name, Rect selectionRect, SeparatorParameter param, bool hasParent, bool hasChildren) {
 
             // 文字色  
             Color textColor = param.GetTextColor();
@@ -177,17 +180,29 @@ namespace PMP.HierarchyHelper {
             Rect rect = EditorGUIUtility.PixelsToPoints(RectFromLeft(selectionRect, Screen.width));
             rect.y = selectionRect.y;
             rect.height = selectionRect.height;
-            rect.x += GLOBAL_SPACE_OFFSET_LEFT;
-            rect.width -= GLOBAL_SPACE_OFFSET_LEFT;
+            if (!param.GetUseFullWidth()) {
+                if (hasParent || hasChildren) {
+                    rect.width = selectionRect.width + 16;
+                    rect.x = selectionRect.x;
+                } else {
+                    rect = RectFromLeft(rect, rect.width - GLOBAL_SPACE_OFFSET_LEFT);
+                    rect.x = rect.x + GLOBAL_SPACE_OFFSET_LEFT;
+                }
+            }
 
             Color guiColor = GUI.color;
             GUI.color = bgColor;
             GUI.DrawTexture(rect, pixelWhite, ScaleMode.StretchToFill);
 
-            var content = new GUIContent($"- {name.ToString()} -");
-            rect.x += (rect.width - Styles.Header.CalcSize(content).x) / 2;
+            var content = new GUIContent($"- {name} -");
+            string tooltip = param.GetTooltipText();
+            if (tooltip != "") content.tooltip = tooltip;
             GUI.color = textColor;
-            GUI.Label(rect, content, Styles.Header);
+            var labelStyles = new GUIStyle(Styles.Header);
+            labelStyles.alignment = TextAnchor.MiddleCenter;
+            GUI.Label(rect, content, labelStyles);
+
+            // リセット
             GUI.color = guiColor;
         }
 

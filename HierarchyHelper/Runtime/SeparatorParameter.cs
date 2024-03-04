@@ -4,10 +4,14 @@ namespace PMP.HierarchyHelper {
     [RequireComponent(typeof(Transform))]
     public class SeparatorParameter : MonoBehaviour {
 
+        // 横幅をフルにするか
+        [SerializeField] bool usefullWidth = false;
         // 背景色
-        [SerializeField] Color bgColor = new Color(0.50f, 0.80f, 1.00f);
+        [SerializeField] Color bgColor = new Color(0.50f, 0.86f, 1.00f);
         // 文字色
         [SerializeField] Color textColor = new Color(0.043f, 0.043f, 0.043f);
+        // ツールチップ
+        [SerializeField, TextArea] string tooltipText = "";
 
         /// <summary>
         /// 背景色を上書きします。
@@ -37,5 +41,25 @@ namespace PMP.HierarchyHelper {
         public Color BlendMultiply(Color baseColor, Color multiplyColor) {
             return baseColor * multiplyColor;
         }
+
+        /// <summary>
+        /// Tooltipの文字を設定します。
+        /// </summary>
+        public void SetTooltipText(string msg) => tooltipText = msg;
+
+        /// <summary>
+        /// Tooltipの文字を返します。
+        /// </summary>
+        public string GetTooltipText() => tooltipText;
+
+        /// <summary>
+        /// 横幅をフルにするかどうかを設定します。
+        /// </summary>
+        public bool SetUseFullWidthState(bool newState) => usefullWidth = newState;
+
+        /// <summary>
+        /// 横幅をフルにするかどうかを返します。
+        /// </summary>
+        public bool GetUseFullWidth() => usefullWidth;
     }
 }

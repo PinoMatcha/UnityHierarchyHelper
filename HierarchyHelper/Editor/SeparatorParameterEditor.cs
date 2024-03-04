@@ -2,6 +2,7 @@ using UnityEditor;
 using UnityEngine;
 
 namespace PMP.HierarchyHelper {
+    [CanEditMultipleObjects]
     [CustomEditor(typeof(SeparatorParameter))]
     public class SeparatorParameterEditor : Editor {
 
@@ -17,6 +18,11 @@ namespace PMP.HierarchyHelper {
                 data.SetBackgroundColor(EditorGUILayout.ColorField("背景色", data.GetBackgroundColor()));
                 GUILayout.Space(2);
                 data.SetTextColor(EditorGUILayout.ColorField("文字色", data.GetTextColor()));
+                GUILayout.Space(4);
+                data.SetUseFullWidthState(EditorGUILayout.ToggleLeft("横幅を最大で表示するか", data.GetUseFullWidth()));
+                GUILayout.Space(4);
+                EditorGUILayout.LabelField("ツールチップ");
+                data.SetTooltipText(EditorGUILayout.TextArea(data.GetTooltipText(), new GUIStyle(EditorStyles.textArea) { wordWrap = true }));
             }
 
             if (EditorGUI.EndChangeCheck()) {
