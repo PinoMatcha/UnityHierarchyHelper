@@ -47,8 +47,5 @@ Unity : 2021.3.35f1
 ―
 
 ## 配布場所
-BOOTHに置いてあります。
-
-以下リンクです。
-
+### BOOTH
 https://pinomatcha.booth.pm/items/4838565
