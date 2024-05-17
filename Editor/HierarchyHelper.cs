@@ -1,5 +1,8 @@
 using UnityEngine;
 using System.Collections.Generic;
+using System;
+using System.Linq;
+
 #if UNITY_EDITOR
 using UnityEditor;
 using UnityEditor.IMGUI.Controls;
@@ -11,27 +14,38 @@ namespace PMP.HierarchyHelper {
         // 現在のイベント
         internal static Event currentEvent;
 
-        [MenuItem("GameObject/PM Presents/Hierarchy Helper/Create Hierarchy Separator", false, 20)]
-        [MenuItem("Tools/PM Presents/Hierarchy Helper/Create Hierarchy Separator", false, 20)]
-        static void CreateHierarchySeparator() {
-            var go = new GameObject("Separator");
+        [MenuItem("GameObject/PM Presents/Hierarchy Helper/Create Header", false, 20)]
+        [MenuItem("Tools/PM Presents/Hierarchy Helper/Create Header", false, 20)]
+        static void CreateHeader() {
+            var go = new GameObject("Header");
             go.transform.position = new Vector3();
             go.transform.rotation = Quaternion.Euler(0.0f, 0.0f, 0.0f);
             go.transform.localScale = Vector3.one;
             go.transform.hideFlags = HideFlags.HideInInspector;
-            var sParam = go.AddComponent<SeparatorParameter>();
+            var param = go.AddComponent<HeaderParameter>();
 
-            if (!EditorGUIUtility.isProSkin) {
-                sParam.SetBackgroundColor(new Color(0.50f, 0.86f, 1.00f));
-                sParam.SetTextColor(new Color(0.043f, 0.043f, 0.043f));
-            } else {
-                sParam.SetBackgroundColor(new Color(0.30f, 0.60f, 0.75f));
-                sParam.SetTextColor(new Color(0.8235295f, 0.8235295f, 0.8235295f));
-            }
+            param.Reset();
+
+            Undo.RegisterCreatedObjectUndo(go, $"Create Header '{go.name}'");
 
             Selection.activeGameObject = go;
 
-            Debug.Log("[PM Presents] Hierarchy Separator を作成しました。");
+            Debug.Log("[PM Presents/Hierarchy Helper] Header を作成しました。");
+        }
+
+
+        [MenuItem("GameObject/PM Presents/Hierarchy Helper/Create Separator", false, 20)]
+        [MenuItem("Tools/PM Presents/Hierarchy Helper/Create Separator", false, 20)]
+        static void CreateSeparator() {
+            var go = new GameObject("/=Separator");
+            go.transform.position = new Vector3();
+            go.transform.rotation = Quaternion.Euler(0.0f, 0.0f, 0.0f);
+            go.transform.localScale = Vector3.one;
+            go.transform.hideFlags = HideFlags.HideInInspector;
+
+            Undo.RegisterCreatedObjectUndo(go, $"Create Separator '{go.name}'");
+
+            Debug.Log("[PM Presents/Hierarchy Helper] Separator を作成しました。");
         }
 
         internal const int GLOBAL_SPACE_OFFSET_LEFT = 16 * 2;
@@ -61,17 +75,31 @@ namespace PMP.HierarchyHelper {
         }
 
         // 1x1のホワイトピクセル
-        private static Texture2D _pixelWhite = null;
-        private static Texture2D pixelWhite {
-            get {
-                if (_pixelWhite == null) {
-                    /* _pixelWhite = new Texture2D(1, 1, TextureFormat.RGBA32, false);
-                    _pixelWhite.SetPixel(0, 0, Color.white);
-                    _pixelWhite.Apply(); */
-                    _pixelWhite = Texture2D.whiteTexture;
-                }
+        private static Texture2D pixelWhite => Texture2D.whiteTexture;
 
-                return _pixelWhite;
+        static Color GetColor(string htmlColor) {
+            if (!ColorUtility.TryParseHtmlString(htmlColor, out var color)) throw new ArgumentException();
+            return color;
+        }
+
+        public static Color HighlightBackgroundInactive {
+            get {
+                if (EditorGUIUtility.isProSkin) return GetColor("#4D4D4D");
+                else return GetColor("#AEAEAE");
+            }
+        }
+
+        public static Color HighlightBackground {
+            get {
+                if (EditorGUIUtility.isProSkin) return GetColor("#2C5D87");
+                else return GetColor("#3A72B0");
+            }
+        }
+
+        public static Color WindowBackground {
+            get {
+                if (EditorGUIUtility.isProSkin) return GetColor("#383838");
+                else return GetColor("#C8C8C8");
             }
         }
 
@@ -87,85 +115,40 @@ namespace PMP.HierarchyHelper {
 
             var activeObject = Selection.activeGameObject;
             if (activeObject) {
-                bool isSeparator = activeObject.GetComponent<SeparatorParameter>() != null;
-                Tools.hidden = isSeparator;
+                bool isHeader = activeObject.GetComponent<HeaderParameter>() != null;
+                Tools.hidden = isHeader;
             }
         }
 
-        private static void HierarchyOnGUI(int instanceID, Rect selectionRect) {
+        private static Color GetBackgroundColor(Rect srcRect, int instanceID) {
+            Color result;
+            var isHover = srcRect.Contains(currentEvent.mousePosition);
 
-            var gameObject = EditorUtility.InstanceIDToObject(instanceID) as GameObject;
-
-            // Sceneはreturn
-            if (gameObject == null) return;
-
-            #region Draw Separator
-
-            SeparatorParameter sParam = gameObject.GetComponent<SeparatorParameter>();
-            if (sParam) {
-                DrawSeparator(gameObject.name, selectionRect, sParam, gameObject.transform.parent, gameObject.transform.childCount > 0);
-                gameObject.transform.hideFlags = HideFlags.NotEditable | HideFlags.HideInInspector;
-                SceneVisibilityManager svmIns = SceneVisibilityManager.instance;
-                if (svmIns.IsHidden(gameObject) || svmIns.IsPickingDisabled(gameObject)) {
-                    svmIns.Show(gameObject, true);
-                    svmIns.EnablePicking(gameObject, true);
-                }
-            }
-
-            #endregion
-
-            #region Draw Stripe
-
-            // 仕切り用のオブジェクトでなければ行を色分け
-            var index = (int)(selectionRect.y + STRIPE_OFFSET_Y) / ROW_HEIGHT;
-            if (!sParam) DrawStripedLines(index, selectionRect);
-
-            #endregion
-
-            #region Draw Tree
-
-            bool hasParent = gameObject.transform.parent != null;
-            bool hasChildren = gameObject.transform.childCount > 0;
-
-            if (hasParent) {
-                int nestLevel = -1;
-                Transform checkTrns = gameObject.transform;
-                List<Transform> parentsList = new List<Transform>();
-                while (checkTrns.parent != null) {
-                    nestLevel++;
-                    parentsList.Add(checkTrns.parent);
-                    checkTrns = checkTrns.parent;
-                }
-
-                DrawHorizontalLine(selectionRect, nestLevel, hasChildren);
-                if (gameObject.transform.GetSiblingIndex() < gameObject.transform.parent.childCount - 1) {
-                    DrawFullVerticalLine(selectionRect, nestLevel);
+            if (Selection.Contains(instanceID)) {
+                if (EditorWindow.focusedWindow != null && EditorWindow.focusedWindow.titleContent.text == "Hierarchy") {
+                    result = HighlightBackground;
                 } else {
-                    DrawHalfVerticalLine(selectionRect, true, nestLevel);
+                    result = HighlightBackgroundInactive;
                 }
-
-                for (int i = nestLevel; i > 0; i--) {
-                    if (parentsList == null || parentsList.Count == 0) continue;
-
-                    var parent = parentsList[nestLevel - i];
-                    var prevParent = parentsList[nestLevel - (i - 1)];
-                    if (parent != null && prevParent != null) {
-                        if (parent.GetSiblingIndex() < prevParent.childCount - 1) {
-                            DrawFullVerticalLine(selectionRect, i - 1);
-                        }
-                    }
-                }
-
-                parentsList.Clear();
+            } else if (isHover) {
+                result = HighlightBackgroundInactive;
+            } else {
+                result = WindowBackground;
             }
 
-            #endregion
-
-            // Repaint
-            EditorApplication.RepaintHierarchyWindow();
+            return result;
         }
 
-        private static void DrawSeparator(string name, Rect selectionRect, SeparatorParameter param, bool hasParent, bool hasChildren) {
+        private static void TrySetGameObjectActive(GameObject gameObject, bool active) {
+            Undo.RecordObject(gameObject, $"{(active ? "Activate" : "Deactivate")} GameObject '{gameObject.name}'");
+            gameObject.SetActive(active);
+            EditorUtility.SetDirty(gameObject);
+        }
+
+        static bool clicked = false;
+        static Vector2 lmbDownPos;
+
+        private static void DrawHeader(string name, Rect selectionRect, HeaderParameter param, bool hasParent, bool hasChildren) {
 
             // 文字色  
             Color textColor = param.GetTextColor();
@@ -204,6 +187,17 @@ namespace PMP.HierarchyHelper {
 
             // リセット
             GUI.color = guiColor;
+        }
+
+        private static void DrawSeparator(Rect srcRect, int instanceID) {
+            // Draw background
+            EditorGUI.DrawRect(srcRect, GetBackgroundColor(srcRect, instanceID));
+
+            var rect = srcRect;
+            rect.y += srcRect.height * 0.5f;
+            rect.xMax += 14;
+            rect.height = 1f;
+            EditorGUI.DrawRect(rect, new Color(0.5f, 0.5f, 0.5f));
         }
 
         static Rect RectFromLeft(Rect rect, float width) {
@@ -257,6 +251,126 @@ namespace PMP.HierarchyHelper {
             selectionRect.xMax = xMax + 16;
 
             EditorGUI.DrawRect(selectionRect, STRIPE_COLOR);
+        }
+
+        private static void HierarchyOnGUI(int instanceID, Rect selectionRect) {
+
+            var gameObject = EditorUtility.InstanceIDToObject(instanceID) as GameObject;
+
+            currentEvent = Event.current;
+
+            // Sceneはreturn
+            if (gameObject == null) return;
+
+            #region Draw Header
+
+            HeaderParameter isHeader = gameObject.GetComponent<HeaderParameter>();
+            if (isHeader) {
+                DrawHeader(gameObject.name, selectionRect, isHeader, gameObject.transform.parent, gameObject.transform.childCount > 0);
+                gameObject.transform.hideFlags = HideFlags.NotEditable | HideFlags.HideInInspector;
+                SceneVisibilityManager svmIns = SceneVisibilityManager.instance;
+                if (svmIns.IsHidden(gameObject) || svmIns.IsPickingDisabled(gameObject)) {
+                    svmIns.Show(gameObject, true);
+                    svmIns.EnablePicking(gameObject, true);
+                }
+            }
+
+            #endregion
+
+            #region Draw Separator
+
+            bool isSeparator = gameObject.name.StartsWith("/=Separator");
+            if (isSeparator) {
+                DrawSeparator(selectionRect, instanceID);
+            }
+
+            #endregion
+
+            #region Draw Stripe
+
+            var index = (int)(selectionRect.y + STRIPE_OFFSET_Y) / ROW_HEIGHT;
+            if (!isHeader) DrawStripedLines(index, selectionRect);
+
+            #endregion
+
+            #region Draw Tree
+
+            bool hasParent = gameObject.transform.parent != null;
+            bool hasChildren = gameObject.transform.childCount > 0;
+
+            if (hasParent) {
+                int nestLevel = -1;
+                Transform checkTrns = gameObject.transform;
+                List<Transform> parentsList = new List<Transform>();
+                while (checkTrns.parent != null) {
+                    nestLevel++;
+                    parentsList.Add(checkTrns.parent);
+                    checkTrns = checkTrns.parent;
+                }
+
+                if (!isHeader && !isSeparator) DrawHorizontalLine(selectionRect, nestLevel, hasChildren);
+                if (gameObject.transform.GetSiblingIndex() < gameObject.transform.parent.childCount - 1) {
+                    DrawFullVerticalLine(selectionRect, nestLevel);
+                } else {
+                    DrawHalfVerticalLine(selectionRect, true, nestLevel);
+                }
+
+                for (int i = nestLevel; i > 0; i--) {
+                    if (parentsList == null || parentsList.Count == 0) continue;
+
+                    var parent = parentsList[nestLevel - i];
+                    var prevParent = parentsList[nestLevel - (i - 1)];
+                    if (parent != null && prevParent != null) {
+                        if (parent.GetSiblingIndex() < prevParent.childCount - 1) {
+                            DrawFullVerticalLine(selectionRect, i - 1);
+                        }
+                    }
+                }
+
+                parentsList.Clear();
+            }
+
+            #endregion
+
+            #region Draw Toggle
+
+            if (!isHeader && !isSeparator) {
+                var rect = selectionRect;
+                rect.x = rect.xMax + 1f;
+                rect.width = 16f;
+
+                var active = GUI.Toggle(rect, gameObject.activeSelf, string.Empty);
+                if (currentEvent.button == 0) {
+                    if (active != gameObject.activeSelf) {
+                        if (Selection.gameObjects.Length > 0) {
+                            foreach (var go in Selection.gameObjects) {
+                                TrySetGameObjectActive(go, active);
+                            }
+                        } else {
+                            TrySetGameObjectActive(gameObject, active);
+                        }
+                    }
+                }
+
+                bool lmbDown = currentEvent.button == 0 && currentEvent.type == EventType.MouseDown;
+
+                if (lmbDown) {
+                    lmbDownPos = currentEvent.mousePosition;
+                    clicked = true;
+                }
+
+                if (rect.Contains(lmbDownPos)) {
+                    if (clicked) {
+                        clicked = false;
+                        Debug.Log(gameObject.name);
+                    }
+                }
+            }
+
+            #endregion
+
+            // Repaint
+            EditorApplication.RepaintHierarchyWindow();
         }
     }
 }
