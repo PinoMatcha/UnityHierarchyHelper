@@ -54,7 +54,7 @@ namespace PMP.HierarchyHelper {
         internal const int STRIPE_OFFSET_X = 3;
         internal const int STRIPE_OFFSET_Y = -4;
         internal const int STRIPE_BAR_WIDTH = 2;
-        internal static readonly Color STRIPE_COLOR = new Color(0, 0, 0, 0.08f);
+        internal static readonly Color STRIPE_COLOR = new Color(0, 0, 0, 0.06f);
 
         private static Color TREE_COLOR_LIGHT = Color.black;
         private static Color TREE_COLOR_DARK = Color.black;
@@ -139,7 +139,7 @@ namespace PMP.HierarchyHelper {
             return result;
         }
 
-        private static void TrySetGameObjectActive(GameObject gameObject, bool active) {
+        private static void SetGameObjectActive(GameObject gameObject, bool active) {
             Undo.RecordObject(gameObject, $"{(active ? "Activate" : "Deactivate")} GameObject '{gameObject.name}'");
             gameObject.SetActive(active);
             EditorUtility.SetDirty(gameObject);
@@ -344,10 +344,10 @@ namespace PMP.HierarchyHelper {
                     if (active != gameObject.activeSelf) {
                         if (Selection.gameObjects.Length > 0) {
                             foreach (var go in Selection.gameObjects) {
-                                TrySetGameObjectActive(go, active);
+                                SetGameObjectActive(go, active);
                             }
                         } else {
-                            TrySetGameObjectActive(gameObject, active);
+                            SetGameObjectActive(gameObject, active);
                         }
                     }
                 }
