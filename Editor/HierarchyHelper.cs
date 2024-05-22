@@ -18,6 +18,8 @@ namespace PMP.HierarchyHelper {
         [MenuItem("Tools/PM Presents/Hierarchy Helper/Create Header", false, 20)]
         static void CreateHeader() {
             var go = new GameObject("Header");
+            if (Selection.activeGameObject) go.transform.SetParent(Selection.activeGameObject.transform);
+
             go.transform.position = new Vector3();
             go.transform.rotation = Quaternion.Euler(0.0f, 0.0f, 0.0f);
             go.transform.localScale = Vector3.one;
@@ -38,6 +40,8 @@ namespace PMP.HierarchyHelper {
         [MenuItem("Tools/PM Presents/Hierarchy Helper/Create Separator", false, 20)]
         static void CreateSeparator() {
             var go = new GameObject("/=Separator");
+            if (Selection.activeGameObject) go.transform.SetParent(Selection.activeGameObject.transform);
+
             go.transform.position = new Vector3();
             go.transform.rotation = Quaternion.Euler(0.0f, 0.0f, 0.0f);
             go.transform.localScale = Vector3.one;
@@ -174,8 +178,8 @@ namespace PMP.HierarchyHelper {
             }
 
             Color guiColor = GUI.color;
-            GUI.color = bgColor;
-            GUI.DrawTexture(rect, pixelWhite, ScaleMode.StretchToFill);
+
+            EditorGUI.DrawRect(rect, bgColor);
 
             var content = new GUIContent($"- {name} -");
             string tooltip = param.GetTooltipText();
@@ -262,6 +266,13 @@ namespace PMP.HierarchyHelper {
             // Sceneはreturn
             if (gameObject == null) return;
 
+            #region Draw Stripe
+
+            var index = (int)(selectionRect.y + STRIPE_OFFSET_Y) / ROW_HEIGHT;
+            DrawStripedLines(index, selectionRect);
+
+            #endregion
+
             #region Draw Header
 
             HeaderParameter isHeader = gameObject.GetComponent<HeaderParameter>();
@@ -286,13 +297,6 @@ namespace PMP.HierarchyHelper {
 
             #endregion
 
-            #region Draw Stripe
-
-            var index = (int)(selectionRect.y + STRIPE_OFFSET_Y) / ROW_HEIGHT;
-            if (!isHeader) DrawStripedLines(index, selectionRect);
-
-            #endregion
-
             #region Draw Tree
 
             bool hasParent = gameObject.transform.parent != null;
@@ -308,11 +312,13 @@ namespace PMP.HierarchyHelper {
                     checkTrns = checkTrns.parent;
                 }
 
-                if (!isHeader && !isSeparator) DrawHorizontalLine(selectionRect, nestLevel, hasChildren);
+                if (!isSeparator) DrawHorizontalLine(selectionRect, nestLevel, hasChildren);
                 if (gameObject.transform.GetSiblingIndex() < gameObject.transform.parent.childCount - 1) {
                     DrawFullVerticalLine(selectionRect, nestLevel);
                 } else {
-                    DrawHalfVerticalLine(selectionRect, true, nestLevel);
+                    if (!isSeparator) {
+                        DrawHalfVerticalLine(selectionRect, true, nestLevel);
+                    }
                 }
 
                 for (int i = nestLevel; i > 0; i--) {
@@ -342,9 +348,15 @@ namespace PMP.HierarchyHelper {
                 var active = GUI.Toggle(rect, gameObject.activeSelf, string.Empty);
                 if (currentEvent.button == 0) {
                     if (active != gameObject.activeSelf) {
-                        if (Selection.gameObjects.Length > 0) {
-                            foreach (var go in Selection.gameObjects) {
-                                SetGameObjectActive(go, active);
+                        if (Selection.gameObjects.Length > 1) {
+                            if (Selection.gameObjects.Contains(gameObject)) {
+                                foreach (var go in Selection.gameObjects) {
+                                    if (active != go.activeSelf) {
+                                        SetGameObjectActive(go, active);
+                                    }
+                                }
+                            } else {
+                                SetGameObjectActive(gameObject, active);
                             }
                         } else {
                             SetGameObjectActive(gameObject, active);
