@@ -374,7 +374,6 @@ namespace PMP.HierarchyHelper {
                 if (rect.Contains(lmbDownPos)) {
                     if (clicked) {
                         clicked = false;
-                        Debug.Log(gameObject.name);
                     }
                 }
             }

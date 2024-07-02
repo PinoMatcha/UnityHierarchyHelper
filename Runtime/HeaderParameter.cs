@@ -1,6 +1,9 @@
+﻿using UnityEngine;
+#if UNITY_EDITOR
 using UnityEditor;
-using UnityEngine;
+#endif
 
+#if UNITY_EDITOR
 namespace PMP.HierarchyHelper {
     [RequireComponent(typeof(Transform))]
     public class HeaderParameter : MonoBehaviour {
@@ -85,3 +88,4 @@ namespace PMP.HierarchyHelper {
         }
     }
 }
+#endif
