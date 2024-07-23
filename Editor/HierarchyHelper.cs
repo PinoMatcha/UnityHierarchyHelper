@@ -13,6 +13,7 @@ namespace PMP.HierarchyHelper {
 
         // 現在のイベント
         internal static Event currentEvent;
+        internal static int controlID;
 
         [MenuItem("GameObject/PM Presents/Hierarchy Helper/Create Header", false, 20)]
         [MenuItem("Tools/PM Presents/Hierarchy Helper/Create Header", false, 20)]
@@ -81,7 +82,10 @@ namespace PMP.HierarchyHelper {
         // 1x1のホワイトピクセル
         private static Texture2D pixelWhite => Texture2D.whiteTexture;
 
-        static Color GetColor(string htmlColor) {
+        private const int WARNING_ICON_SIZE = 16;
+        private static Texture warningIconImg = null;
+
+        private static Color GetColor(string htmlColor) {
             if (!ColorUtility.TryParseHtmlString(htmlColor, out var color)) throw new ArgumentException();
             return color;
         }
@@ -109,6 +113,11 @@ namespace PMP.HierarchyHelper {
 
         [InitializeOnLoadMethod]
         private static void Initialize() {
+
+            if (warningIconImg == null) {
+                warningIconImg = EditorGUIUtility.IconContent("console.warnicon").image;
+            }
+
             EditorApplication.hierarchyWindowItemOnGUI += HierarchyOnGUI;
             EditorApplication.update += EditorUpdate;
         }
@@ -116,6 +125,7 @@ namespace PMP.HierarchyHelper {
         private static void EditorUpdate() {
             // イベント更新
             currentEvent = Event.current;
+            controlID = GUIUtility.GetControlID(FocusType.Passive);
 
             var activeObject = Selection.activeGameObject;
             if (activeObject) {
@@ -257,6 +267,21 @@ namespace PMP.HierarchyHelper {
             EditorGUI.DrawRect(selectionRect, STRIPE_COLOR);
         }
 
+        private static bool CheckRectContainsMouseDownPosition(Rect rect, int eventButton = 0, bool useEvent = false) {
+            if (rect.Contains(currentEvent.mousePosition)) {
+                if (currentEvent.button == eventButton && currentEvent.type == EventType.MouseDown) {
+                    if (useEvent) {
+                        GUIUtility.hotControl = controlID;
+                        currentEvent.Use();
+                    }
+                    return true;
+                }
+            }
+            return false;
+        }
+
+        private static bool CheckMissingReference(GameObject gameObject) => gameObject.GetComponents<Component>().Any(x => x == null);
+
         private static void HierarchyOnGUI(int instanceID, Rect selectionRect) {
 
             var gameObject = EditorUtility.InstanceIDToObject(instanceID) as GameObject;
@@ -343,38 +368,41 @@ namespace PMP.HierarchyHelper {
             if (!isHeader && !isSeparator) {
                 var rect = selectionRect;
                 rect.x = rect.xMax + 1f;
-                rect.width = 16f;
+                rect.width = 16;
+                rect.height = 16;
 
-                var active = GUI.Toggle(rect, gameObject.activeSelf, string.Empty);
-                if (currentEvent.button == 0) {
-                    if (active != gameObject.activeSelf) {
-                        if (Selection.gameObjects.Length > 1) {
-                            if (Selection.gameObjects.Contains(gameObject)) {
-                                foreach (var go in Selection.gameObjects) {
-                                    if (active != go.activeSelf) {
-                                        SetGameObjectActive(go, active);
-                                    }
+                var active = GUI.Toggle(rect, gameObject.activeSelf, "");
+                if (active != gameObject.activeSelf) {
+                    if (Selection.gameObjects.Length > 1) {
+                        if (Selection.gameObjects.Contains(gameObject)) {
+                            foreach (var go in Selection.gameObjects) {
+                                if (active != go.activeSelf) {
+                                    SetGameObjectActive(go, active);
                                 }
-                            } else {
-                                SetGameObjectActive(gameObject, active);
                             }
                         } else {
                             SetGameObjectActive(gameObject, active);
                         }
+                    } else {
+                        SetGameObjectActive(gameObject, active);
                     }
                 }
+            }
 
-                bool lmbDown = currentEvent.button == 0 && currentEvent.type == EventType.MouseDown;
+            #endregion
 
-                if (lmbDown) {
-                    lmbDownPos = currentEvent.mousePosition;
-                    clicked = true;
-                }
+            #region Draw Missing Icons
 
-                if (rect.Contains(lmbDownPos)) {
-                    if (clicked) {
-                        clicked = false;
-                    }
+            bool isMissing = CheckMissingReference(gameObject);
+            if (!isHeader && !isSeparator && isMissing) {
+                var rect = selectionRect;
+                rect.x = rect.xMax - WARNING_ICON_SIZE;
+                rect.width = WARNING_ICON_SIZE;
+                rect.height = WARNING_ICON_SIZE;
+                GUI.DrawTexture(rect, warningIconImg, ScaleMode.ScaleToFit);
+
+                if (CheckRectContainsMouseDownPosition(rect, useEvent: true)) {
+                    GameObjectUtility.RemoveMonoBehavioursWithMissingScript(gameObject);
                 }
             }
 

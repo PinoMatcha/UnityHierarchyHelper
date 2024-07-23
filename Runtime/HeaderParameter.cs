@@ -1,9 +1,5 @@
-﻿using UnityEngine;
-#if UNITY_EDITOR
-using UnityEditor;
-#endif
+using UnityEngine;
 
-#if UNITY_EDITOR
 namespace PMP.HierarchyHelper {
     [RequireComponent(typeof(Transform))]
     public class HeaderParameter : MonoBehaviour {
@@ -17,16 +13,16 @@ namespace PMP.HierarchyHelper {
         // ツールチップ
         [SerializeField, TextArea] string tooltipText = "";
 
-        public Color GetInitBgColor() {
-            if (!EditorGUIUtility.isProSkin) {
+        public Color GetInitBgColor(bool isProSkin) {
+            if (!isProSkin) {
                 return new Color(0.50f, 0.86f, 1.00f);
             } else {
                 return new Color(0.40f, 0.83f, 1.00f);
             }
         }
 
-        public Color GetInitTextColor() {
-            if (!EditorGUIUtility.isProSkin) {
+        public Color GetInitTextColor(bool isProSkin) {
+            if (!isProSkin) {
                 return new Color(0.043f, 0.043f, 0.043f);
             } else {
                 return new Color(1.00f, 1.00f, 1.00f);
@@ -83,9 +79,11 @@ namespace PMP.HierarchyHelper {
         public bool GetUseFullWidth() => usefullWidth;
 
         public void Reset() {
-            bgColor = GetInitBgColor();
-            textColor = GetInitTextColor();
+#if UNITY_EDITOR
+            bool isProSkin = UnityEditor.EditorGUIUtility.isProSkin;
+            bgColor = GetInitBgColor(isProSkin);
+            textColor = GetInitTextColor(isProSkin);
+#endif
         }
     }
 }
-#endif
